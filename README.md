@@ -1,2 +1,2 @@
 # TwitterMSL
-Twitter Multi-Stream Listener
+Twitter My Stream Listener
