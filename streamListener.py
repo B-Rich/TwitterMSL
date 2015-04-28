@@ -32,7 +32,6 @@ class TweetsFiles :
                 files.append( (int(index),path) )
         
         if len(files) == 0 :
-            print 'init: no files'
             self.current_index = 0
             self.create()
         else :
@@ -44,7 +43,6 @@ class TweetsFiles :
             with open(last_path,'r') as f :
                 last_length = len(f.read().strip().split('\n'))
 
-            print 'init: last file',last_path,'len',last_length
             if last_length >= self.limit :               
                 self.create()
             else :
@@ -56,7 +54,7 @@ class TweetsFiles :
         new_index = self.current_index + 1
         new_filename = '{}_{}.{}'.format(self.file_name,str(new_index),self.ext)
         new_path = os.path.join( self.folder, new_filename )
-        print 'creating new file:',new_path
+
         with open(new_path,'w') as f :
             pass
 
@@ -70,7 +68,6 @@ class TweetsFiles :
         self.current_size += 1
 
         if self.current_size >= self.limit :
-            print 'limit reached:',self.current_index,self.current_size
             self.current_file.close()
             self.create()
 
