@@ -2,7 +2,7 @@
 from TwitterAPI import TwitterAPI,TwitterError
 import requests
 
-import os,time
+import os,time,random
 
 
 def followers_seed(api,username) :
@@ -49,15 +49,17 @@ def seed_to_urls(api,seed_users) :
 
     '''
     urls = set()
+    
     for user_id in seed_users :
 
         user_timeline = api.request('statuses/user_timeline', {'user_id' : user_id})
 
         try :
             for tweet in user_timeline:
-                if 'urls' in tweet :
-                    for url in tweet['urls'] :
-                        urls.add(url['expanded_url'])                
+
+                if 'entities' in tweet and 'urls' in tweet['entities'] :
+                    for url in tweet['entities']['urls'] :
+                        urls.add(url['expanded_url'])
 
         except TwitterError.TwitterRequestError as e :
             print 'URLs so far:',len(urls)
@@ -71,6 +73,7 @@ def seed_to_urls(api,seed_users) :
 if __name__ == '__main__' :
     project_folder = os.path.dirname(os.path.realpath(__file__)) + '/'
     config_path = project_folder + 'config.csv'
+    sample_size = 30
     
     with open(config_path,'r') as f :
         config_params = {}
@@ -116,7 +119,12 @@ if __name__ == '__main__' :
     print 'Followers retrieved:',len(followers)
     if not os.path.isfile(domains_path) :
         print 'Retrieving {} URLs..'.format(username)
-        urls = seed_to_urls(api,followers)
+
+        # retrieve URLs for a sample of the seed population
+        followers = list(followers)
+        sample_followers = [followers[i] for i in random.sample(xrange(len(followers)),sample_size)]
+
+        urls = seed_to_urls(api,sample_followers)
 
         with open(domains_path,'w') as f :
             for url in urls :
