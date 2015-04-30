@@ -1,5 +1,6 @@
 
 from TwitterAPI import TwitterAPI,TwitterError
+import requests
 
 import os,time
 
@@ -19,20 +20,25 @@ def followers_seed(api,username) :
 
         try :
             followers = api.request('followers/ids', {'screen_name' : username, 'cursor' : str(next_cursor)})
-
             for u in followers :
+                
                 uids.add( u )
 
-            
+            if len(uids) == 0 :
+                break
             next_cursor = (followers.json())['next_cursor']
-
-
             
         except TwitterError.TwitterRequestError as e :
+            print 'Followers so far:',len(uids)
             print 'Zzz'
             time.sleep(60 * 16)
     
     return uids
+
+def resolve(shortener) :
+    r = requests.get(shortener)
+    return r.url
+
     
 
 
@@ -49,12 +55,14 @@ def seed_to_urls(api,seed_users) :
 
         try :
             for tweet in user_timeline:
-
-                for url in tweet['urls'] :
-                    urls.add(url['expanded_url'])                
+                if 'urls' in tweet :
+                    for url in tweet['urls'] :
+                        urls.add(url['expanded_url'])                
 
         except TwitterError.TwitterRequestError as e :
-            sleep(60 * 16)
+            print 'URLs so far:',len(urls)
+            print 'Zzz'
+            time.sleep(60 * 16)
     
     return urls
 
@@ -80,11 +88,50 @@ if __name__ == '__main__' :
 
     api = TwitterAPI(c1,c2,c3,c4)
 
+
     from sys import argv
     username = argv[1]
-    print 'Retrieving {} followers..'.format(username)
-    followers = followers_seed(api,username)
+
+    seed_path = 'seed_{}.txt'.format(username)
+    domains_path = 'domains_{}.txt'.format(username)
+
+    if not os.path.isfile(seed_path) :
+        print 'Retrieving {} followers..'.format(username)
+        followers = followers_seed(api,username)
+
+        with open(seed_path,'w') as f :
+            for uid in followers :
+                f.write( str(uid) + '\n' )
+
+    else :
+        followers = set()
+        with open(seed_path,'r') as f :
+            for line in f :
+                try :
+                    uid = int(line.strip())
+                    followers.add(uid)
+                except ValueError :
+                    continue
+
     print 'Followers retrieved:',len(followers)
+    if not os.path.isfile(domains_path) :
+        print 'Retrieving {} URLs..'.format(username)
+        urls = seed_to_urls(api,followers)
+
+        with open(domains_path,'w') as f :
+            for url in urls :
+                f.write( url + '\n' )
+
+    else :
+        urls = set()
+        with open(domains_path,'r') as f :
+            for line in f :
+                if line != '' :
+                    url = line.strip()
+                    urls.add(url)
+
+    print 'URLs retrieved:',len(urls)
+
     
 
     
