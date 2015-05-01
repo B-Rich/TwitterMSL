@@ -86,12 +86,51 @@ def seed_to_urls(api,f,seed_users) :
     
     return urls
 
+def seed_to_urls2(api,f,seed_users) :
+    '''
+    Retrieves a set of links shared from a seed community of Twitter users, given a list of user IDs.
+    Returns a set of links.
+
+    '''
+    urls = []
+    i = 0
+    tcount = 0
+    while i < len(seed_users) :
+        users = [seed_users[j] for j in xrange(i,i+100)]
+        i += 100
+        
+        response = api.request('users/lookup', {'user_id' : users, 'include_entities' : 'true'})
+
+
+        try :
+            for x in response:
+
+                if 'status' in x and 'entities' in x['status'] and 'urls' in x['status']['entities'] :
+                    for url in x['status']['entities']['urls'] :
+                        urls.append(url['expanded_url'])
+                        tcount += 1
+
+        except TwitterError.TwitterRequestError as e :
+            
+            for u in urls :
+                try :
+                    f.write( u + '\n' )
+                except UnicodeEncodeError :
+                    continue
+            urls = []
+            print 'Zzz'
+            time.sleep(60 * 16)
+
+        print 'Users: {}/{} URLs: {}'.format(str(i),str(len(seed_users)),str(tcount))
+    
+    return urls
+
 
 
 if __name__ == '__main__' :
     project_folder = os.path.dirname(os.path.realpath(__file__)) + '/'
     config_path = project_folder + 'config.csv'
-    sample_size = 2000
+    sample_size = 10000
     
     with open(config_path,'r') as f :
         config_params = {}
@@ -139,7 +178,7 @@ if __name__ == '__main__' :
         sample_followers = [followers[i] for i in random.sample(xrange(len(followers)),sample_size)]
 
         with open(domains_path,'w') as f :
-            urls = seed_to_urls(api,f,sample_followers)
+            urls = seed_to_urls2(api,f,sample_followers)
 
     else :
         urls = set()
