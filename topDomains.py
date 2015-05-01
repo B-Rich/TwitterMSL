@@ -11,9 +11,7 @@ def followers_seed(api,username) :
     Returns a set of user IDs.
 
     '''
-    uids = set()
-
-
+    uids = []
 
     next_cursor = -1
     while next_cursor != 0 :
@@ -22,14 +20,16 @@ def followers_seed(api,username) :
             followers = api.request('followers/ids', {'screen_name' : username, 'cursor' : str(next_cursor)})
             for u in followers :
                 
-                uids.add( u )
+                uids.append( u )
 
             if len(uids) == 0 :
                 break
             next_cursor = (followers.json())['next_cursor']
             
         except TwitterError.TwitterRequestError as e :
-            print 'Followers so far:',len(uids)
+            for uid in followers :
+                f.write( str(uid) + '\n' )
+            followers = []
             print 'Zzz'
             time.sleep(60 * 16)
     
@@ -42,29 +42,47 @@ def resolve(shortener) :
     
 
 
-def seed_to_urls(api,seed_users) :
+def seed_to_urls(api,f,seed_users) :
     '''
     Retrieves a set of links shared from a seed community of Twitter users, given a list of user IDs.
     Returns a set of links.
 
     '''
-    urls = set()
-    
-    for user_id in seed_users :
+    urls = []
 
+    ucount = 0
+    tcount = 0
+
+    tweets_per_user = 10
+    for user_id in seed_users :
+        
         user_timeline = api.request('statuses/user_timeline', {'user_id' : user_id})
 
+        j = 0
         try :
             for tweet in user_timeline:
 
                 if 'entities' in tweet and 'urls' in tweet['entities'] :
                     for url in tweet['entities']['urls'] :
-                        urls.add(url['expanded_url'])
+                        urls.append(url['expanded_url'])
+                        tcount += 1
+                j += 1
+                if j >= tweets_per_user :
+                    break
 
         except TwitterError.TwitterRequestError as e :
-            print 'URLs so far:',len(urls)
+            
+            for u in urls :
+                try :
+                    f.write( u + '\n' )
+                except UnicodeEncodeError :
+                    continue
+            urls = []
             print 'Zzz'
             time.sleep(60 * 16)
+
+        ucount += 1
+        print 'Users: {}/{} URLs: {}'.format(str(ucount),str(len(seed_users)),str(tcount))
     
     return urls
 
@@ -73,7 +91,7 @@ def seed_to_urls(api,seed_users) :
 if __name__ == '__main__' :
     project_folder = os.path.dirname(os.path.realpath(__file__)) + '/'
     config_path = project_folder + 'config.csv'
-    sample_size = 30
+    sample_size = 2000
     
     with open(config_path,'r') as f :
         config_params = {}
@@ -100,12 +118,8 @@ if __name__ == '__main__' :
 
     if not os.path.isfile(seed_path) :
         print 'Retrieving {} followers..'.format(username)
-        followers = followers_seed(api,username)
-
         with open(seed_path,'w') as f :
-            for uid in followers :
-                f.write( str(uid) + '\n' )
-
+            followers = followers_seed(api,f,username)
     else :
         followers = set()
         with open(seed_path,'r') as f :
@@ -124,11 +138,8 @@ if __name__ == '__main__' :
         followers = list(followers)
         sample_followers = [followers[i] for i in random.sample(xrange(len(followers)),sample_size)]
 
-        urls = seed_to_urls(api,sample_followers)
-
         with open(domains_path,'w') as f :
-            for url in urls :
-                f.write( url + '\n' )
+            urls = seed_to_urls(api,f,sample_followers)
 
     else :
         urls = set()
