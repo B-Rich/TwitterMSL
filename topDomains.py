@@ -29,11 +29,10 @@ def followers_seed(api,username) :
         except TwitterError.TwitterRequestError as e :
             for uid in followers :
                 f.write( str(uid) + '\n' )
-            followers = []
+            uids = []
             print 'Zzz'
             time.sleep(60 * 16)
     
-    return uids
 
 def resolve(shortener) :
     r = requests.get(shortener)
@@ -84,8 +83,6 @@ def seed_to_urls(api,f,seed_users) :
         ucount += 1
         print 'Users: {}/{} URLs: {}'.format(str(ucount),str(len(seed_users)),str(tcount))
     
-    return urls
-
 def seed_to_urls2(api,f,seed_users) :
     '''
     Retrieves a set of links shared from a seed community of Twitter users, given a list of user IDs.
@@ -121,16 +118,14 @@ def seed_to_urls2(api,f,seed_users) :
             print 'Zzz'
             time.sleep(60 * 16)
 
-        print 'Users: {}/{} URLs: {}'.format(str(i),str(len(seed_users)),str(tcount))
-    
-    return urls
+        print 'Users: {}/{} URLs: {}'.format(str(i),str(len(seed_users)),str(tcount))    
 
 
 
 if __name__ == '__main__' :
     project_folder = os.path.dirname(os.path.realpath(__file__)) + '/'
     config_path = project_folder + 'config.csv'
-    sample_size = 10000
+    sample_size = 50000
     
     with open(config_path,'r') as f :
         config_params = {}
@@ -158,7 +153,8 @@ if __name__ == '__main__' :
     if not os.path.isfile(seed_path) :
         print 'Retrieving {} followers..'.format(username)
         with open(seed_path,'w') as f :
-            followers = followers_seed(api,f,username)
+            followers_seed(api,f,username)
+            exit()
     else :
         followers = set()
         with open(seed_path,'r') as f :
@@ -169,7 +165,6 @@ if __name__ == '__main__' :
                 except ValueError :
                     continue
 
-    print 'Followers retrieved:',len(followers)
     if not os.path.isfile(domains_path) :
         print 'Retrieving {} URLs..'.format(username)
 
@@ -178,17 +173,38 @@ if __name__ == '__main__' :
         sample_followers = [followers[i] for i in random.sample(xrange(len(followers)),sample_size)]
 
         with open(domains_path,'w') as f :
-            urls = seed_to_urls2(api,f,sample_followers)
+            seed_to_urls2(api,f,sample_followers)
+            exit()
 
     else :
-        urls = set()
+        urls = []
         with open(domains_path,'r') as f :
             for line in f :
                 if line != '' :
                     url = line.strip()
-                    urls.add(url)
+                    urls.append(url)
 
-    print 'URLs retrieved:',len(urls)
+    print 'Computing domains...'
+    domains = {}
+    i = 0
+    for url in urls :
+        print '{}/{}'.format(str(i),str(len(urls)))
+        try :
+            resolved = resolve(url)
+            i += 1
+        except requests.exceptions.ConnectionError :
+            i += 1
+            continue
+        dom = resolved.partition('://')[-1].partition('/')[0]
+        if dom in domains :
+            domains[dom] += 1
+        else :
+            domains[dom] = 1
+
+    domains = sorted(domains.items(),key=lambda x : x[1],reverse = True)
+    with open('ranked_domains_{}.txt'.format(username),'w') as f :
+        for d,c in domains :
+            f.write( '{},{}\n'.format(d,str(c)) )
 
     
 
