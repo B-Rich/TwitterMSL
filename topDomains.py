@@ -5,7 +5,7 @@ import requests
 import os,time,random
 
 
-def followers_seed(api,username) :
+def followers_seed(api,f,username) :
     '''
     Retrieves the followers of a Twitter profile, given its username (screen name).
     Returns a set of user IDs.
@@ -27,7 +27,8 @@ def followers_seed(api,username) :
             next_cursor = (followers.json())['next_cursor']
             
         except TwitterError.TwitterRequestError as e :
-            for uid in followers :
+            print 'writing {} users'.format(str(len(uids)))
+            for uid in uids :
                 f.write( str(uid) + '\n' )
             uids = []
             print 'Zzz'
@@ -149,6 +150,7 @@ if __name__ == '__main__' :
 
     seed_path = 'seed_{}.txt'.format(username)
     domains_path = 'domains_{}.txt'.format(username)
+    resolved_path = 'resolved_domains_{}'.format(username)
 
     if not os.path.isfile(seed_path) :
         print 'Retrieving {} followers..'.format(username)
@@ -184,27 +186,36 @@ if __name__ == '__main__' :
                     url = line.strip()
                     urls.append(url)
 
-    print 'Computing domains...'
-    domains = {}
-    i = 0
-    for url in urls :
-        print '{}/{}'.format(str(i),str(len(urls)))
-        try :
-            resolved = resolve(url)
-            i += 1
-        except requests.exceptions.ConnectionError :
-            i += 1
-            continue
-        dom = resolved.partition('://')[-1].partition('/')[0]
-        if dom in domains :
-            domains[dom] += 1
-        else :
-            domains[dom] = 1
+    if not os.path.isfile(resolved_path) :
+        print 'Computing domains...'
+        domains = {}
+        i = 0
+        already_resolved = {}
+        with open(resolved_path,'w') as f :
+            for url in urls :
+                print '{}/{}'.format(str(i),str(len(urls)))
+                if url in already_resolved :
+                    resolved = already_resolved[url]
+                else :
+                    try :
+                        resolved = resolve(url)
+                        already_resolved[url] = resolved
+                    except Exception :
+                        continue
+                
+                f.write(resolved + '\n')
+                i += 1
 
-    domains = sorted(domains.items(),key=lambda x : x[1],reverse = True)
-    with open('ranked_domains_{}.txt'.format(username),'w') as f :
-        for d,c in domains :
-            f.write( '{},{}\n'.format(d,str(c)) )
+                dom = resolved.partition('://')[-1].partition('/')[0]
+                if dom in domains :
+                    domains[dom] += 1
+                else :
+                    domains[dom] = 1
+                    
+            domains = sorted(domains.items(),key=lambda x : x[1],reverse = True)
+            with open('ranked_domains_{}.txt'.format(username),'w') as f :
+                for d,c in domains :
+                    f.write( '{},{}\n'.format(d,str(c)) )
 
     
 
