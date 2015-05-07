@@ -14,7 +14,8 @@ def followers_seed(api,f,username) :
     uids = []
 
     next_cursor = -1
-    while next_cursor != 0 :
+    f_count = 0
+    while next_cursor != 0 and f_count < 500000:
 
         try :
             followers = api.request('followers/ids', {'screen_name' : username, 'cursor' : str(next_cursor)})
@@ -27,7 +28,8 @@ def followers_seed(api,f,username) :
             next_cursor = (followers.json())['next_cursor']
             
         except TwitterError.TwitterRequestError as e :
-            print 'writing {} users'.format(str(len(uids)))
+            f_count += len(uids)
+            print 'writing {} users'.format(str(f_count))
             for uid in uids :
                 f.write( str(uid) + '\n' )
             uids = []
