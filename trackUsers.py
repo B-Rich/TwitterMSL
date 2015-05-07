@@ -88,7 +88,7 @@ def trackUsers(api,users,output_folder) :
         users100 = [users[j] for j in xrange(i,i+100)]
         i += 100
 
-        if i >= len(seed_users) :
+        if i >= len(users) :
             itercount += 1
             i = 0
         
