@@ -97,7 +97,7 @@ def trackUsers(api,users,output_folder) :
 
         try :
             for x in response:                    
-                u = x['user_id']
+                u = x['id']
                 if 'status' in x  and 'entities' in x['status'] and 'urls' in x['status']['entities'] :
                     t = x['status']
                     if last_tweet[u] == None or last_tweet[u] != t :
