@@ -59,10 +59,11 @@ if resolve_urls :
                                 try :
                                     print '.',
                                     rurl = resolve(url)
+                                    fres.write('{},{}\n'.format(url,rurl))
+                                
                                 except Exception :
                                     print "couldn't resolve:",url
                                     continue
-                                fres.write('{},{}\n'.format(url,rurl))
                                 resolved[url] = rurl
 
                             t2 = (day, user, rurl)
