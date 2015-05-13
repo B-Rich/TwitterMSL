@@ -2,17 +2,25 @@ import datetime
 import json
 import requests
 
-def resolve(shortener) :
-    r = requests.get(shortener)
-    return r.url
-
+def resolve(shortener,max_redirects=5) :
+    session = requests.session()
+    r = session.get(shortener, allow_redirects=False, timeout=10)
+    resolved = r.url
+    red_count = 0
+    for redirect in session.resolve_redirects(r, r.request, timeout=10):
+        red_count += 1
+        resolved = redirect.url
+        print red_count
+        if red_count >= max_redirects :
+            break
+    return resolved
 
 tweets = set()
 starting_date = datetime.date(2015,5,7)
 resolved_path = 'resolved.csv'
 output_path = 'overlap.csv'
 
-resolve_urls = False
+resolve_urls = True
 
 
 if resolve_urls :
