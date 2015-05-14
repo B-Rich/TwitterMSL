@@ -21,7 +21,7 @@ if __name__ == '__main__' :
     from sys import argv
     
     output_path = argv[1]
-
+    n_threads = int(argv[2])
     previously_resolved = set()
     try :
         with open(output_path,'r') as f :
@@ -63,7 +63,6 @@ if __name__ == '__main__' :
 
     with open(output_path,'a') as f :
 
-        n_threads = 100
         in_queue = Queue()
         out_queue = Queue()
 
