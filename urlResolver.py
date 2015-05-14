@@ -22,6 +22,8 @@ if __name__ == '__main__' :
     
     output_path = argv[1]
     n_threads = int(argv[2])
+    
+    chunk_size = 1000
     previously_resolved = set()
     try :
         with open(output_path,'r') as f :
@@ -63,14 +65,13 @@ if __name__ == '__main__' :
 
     with open(output_path,'a') as f :
 
-        in_queue = Queue()
-        out_queue = Queue()
-
+        to_resolve = []
 
         for url in urls :
             domain = url.partition('//')[-1].partition('/')[0]
             if domain in s_domains :
-                in_queue.put( url )
+                to_resolve.append( url )
+
 
             else :
                 try :
@@ -88,26 +89,37 @@ if __name__ == '__main__' :
                     pass
                 in_queue.task_done()
 
+        while len(to_resolve) > 0 :
+
+            in_queue = Queue()
+            out_queue = Queue()
+
+            for _ in xrange(chunk_size) :
+                try :
+                    url = to_resolve.pop()
+                    in_queue.put( url )
+                except IndexError :
+                    break
 
 
-        for i in range(n_threads):
-            t = Thread(target=worker,args=(in_queue,out_queue))
-            t.daemon = True
-            t.start()
+            for i in range(n_threads):
+                t = Thread(target=worker,args=(in_queue,out_queue))
+                t.daemon = True
+                t.start()
         
-        try:
-            print "Waiting for the workers to finish"
-            in_queue.join()
-            print "Workers finished crunching"
-        except KeyboardInterrupt :
-            pass
+            try:
+                print "Waiting for the workers to finish"
+                in_queue.join()
+                print "Workers finished crunching"
+            except KeyboardInterrupt :
+                exit()
 
-        while not out_queue.empty() :
-            k,v = out_queue.get()
-            try :
-                f.write('{},{}\n'.format(k,v))
-            except Exception :
-                continue
+            while not out_queue.empty() :
+                k,v = out_queue.get()
+                try :
+                    f.write('{},{}\n'.format(k,v))
+                except Exception :
+                    continue
         
 
             
