@@ -98,8 +98,9 @@ def trackUsers(api,users,output_folder) :
         try :
             for x in response:                    
                 u = x['id']
-                if 'status' in x  and 'entities' in x['status'] and 'urls' in x['status']['entities'] :
+                if 'status' in x  and 'entities' in x['status'] and 'urls' in x['status']['entities'] and len(x['status']['entities']['urls']) > 0 :
                     t = x['status']
+                    t['user_id'] = u
                     if last_tweet[u] == None or last_tweet[u] != t :
                         # add tweet
                         last_tweet[u] = t
@@ -156,5 +157,13 @@ if __name__ == '__main__' :
             except ValueError :
                 continue
     users = list(users)
-
-    trackUsers(api,users,tweets_folder_abs)
+    
+    while True :
+        try :
+            trackUsers(api,users,tweets_folder_abs)
+        except KeyboardInterrupt :
+            exit()
+        except Exception :
+            print "Woops! Something went wrong!"
+            time.sleep(60 * 16)
+            continue

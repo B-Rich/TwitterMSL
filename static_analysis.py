@@ -4,7 +4,7 @@ import os
 from subprocess import call
 import networkx as nx
 import numpy as np
-import scipy
+from scipy import sparse
 
 
 if __name__ == '__main__' :
@@ -90,11 +90,11 @@ if __name__ == '__main__' :
     A = nx.algorithms.bipartite.basic.biadjacency_matrix(G,user_nodes,dtype=np.float)
 
     # change representation to sparse CSR matrix
-    A = scipy.sparse.csr_matrix(A)
+    A = sparse.csr_matrix(A)
 
     # normalize A (each row sums to one)
     S = np.array( [1./r.sum() for r in A]); 
-    D = scipy.sparse.csr_matrix(np.diag(S))
+    D = sparse.csr_matrix(np.diag(S))
     Norm_A = D.dot(A)
 
     # calculate the User-User matrix

@@ -89,7 +89,10 @@ if __name__ == '__main__' :
                     pass
                 in_queue.task_done()
 
+        tcount = len(to_resolve)
         while len(to_resolve) > 0 :
+
+            print "Left: {}/{}".format(str(len(to_resolve)),str(tcount))
 
             in_queue = Queue()
             out_queue = Queue()
