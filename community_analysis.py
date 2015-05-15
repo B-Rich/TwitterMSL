@@ -88,7 +88,10 @@ if __name__ == '__main__' :
                         continue
                     user = t['user_id']
                     text = t['text']
-                    tweets.add( (user,text) )
+                    if 'entities' in t and 'urls' in t['entities'] :
+                        for x in t['entities']['urls'] :
+                            url = x['expanded_url']
+                            tweets.add( (user,text,url) )
                   
         except IOError :
             continue
@@ -102,7 +105,7 @@ if __name__ == '__main__' :
 
 
     user_text = {}
-    for user,text in tweets :
+    for user,text in {(u,t) for u,t,_ in tweets} :
         if user in user_text :
             user_text[user] += ' ' + text
         else :
@@ -127,15 +130,19 @@ if __name__ == '__main__' :
                     else :
                         kws[k] = v
             
-            if len(kws) == 0 :
+            if len(kws) == 0 or c_size < 2 :
                 continue
 
+            score = 0.0
+            com_urls = {url for user,_,url in tweets if user in community}
+            for x in com_urls :
+                score += len({user for user,_,url in tweets if url == x})
 
-            scores = kws.values()
-            avg_score = sum(scores) / float(len(scores))
+            score = score / (len(com_urls)*c_size)
+
             just_words = map(lambda x : x[0],sorted(kws.items(),key=lambda x : x[1],reverse=True))
 
-            results.append( (avg_score,c_size,just_words[:10]) )
+            results.append( (score,c_size,just_words[:10]) )
 
         results.sort(key = lambda x : x[0], reverse = True)
 
