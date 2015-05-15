@@ -71,11 +71,6 @@ if __name__ == '__main__' :
     with open(community_path,'r') as f :
         communities = json.loads(f.read())
 
-    print "------------------------------"
-    print "Loading tweets.json"
-    print "------------------------------"
-
-
     tweets = set()
 
     for i in xrange(100) :
@@ -102,6 +97,19 @@ if __name__ == '__main__' :
             s = line.strip()
             if len(s) > 0 : 
                 stopwords.append( s )
+
+
+    one_time = set()
+    more_than_once = set()
+    for _,_,url in tweets :
+        if not (url in one_time or url in more_than_once) :
+            one_time.add( url )
+        elif url in one_time :
+            one_time.remove( url )
+            more_than_once.add( url )
+
+    filtered_tweets = {(user,text,url) for user,text,url in tweets if not url in one_time}
+    tweets = filtered_tweets
 
 
     user_text = {}
