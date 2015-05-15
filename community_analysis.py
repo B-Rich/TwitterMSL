@@ -75,7 +75,8 @@ if __name__ == '__main__' :
     print "Loading tweets.json"
     print "------------------------------"
 
-    user_text = {}
+
+    tweets = set()
 
     for i in xrange(100) :
         try :
@@ -87,12 +88,8 @@ if __name__ == '__main__' :
                         continue
                     user = t['user_id']
                     text = t['text']
+                    tweets.add( (user,text) )
                   
-                    if user in user_text :
-                        user_text[user] += ' ' + text
-                    else :
-                        user_text[user] = text
-
         except IOError :
             continue
 
@@ -104,22 +101,43 @@ if __name__ == '__main__' :
                 stopwords.append( s )
 
 
+    user_text = {}
+    for user,text in tweets :
+        if user in user_text :
+            user_text[user] += ' ' + text
+        else :
+            user_text[user] = text
+
     ke = KeywordExtractor(punctuation = string.punctuation, stopwords = stopwords)
     ke.train_model( user_text.values() )
 
     with open(output_path,'w') as f :
+        results = []
         for community in communities :
+
+            c_size = len(community)
+
             kws = {}
             for user in community :
-                doc = user_text[user]                
+                doc = user_text[user]
+
                 for k,v in ke.keywords(doc) :
                     if k in kws :
                         kws[k] += v
                     else :
                         kws[k] = v
 
+            scores = kws.values()
+            avg_score = sum(scores) / float(len(scores))
             just_words = map(lambda x : x[0],sorted(kws.items(),key=lambda x : x[1],reverse=True))
-            for w in just_words[:10] :
+
+            results.append( (avg_score,c_size,just_words[:10]) )
+
+        results.sort(key = lambda x : x[0], reverse = True)
+
+        for _,size,just_words in results :
+            f.write( str(size) + ' : ' )
+            for w in just_words :
                 try :
                     f.write(w + ' ')
                 except UnicodeEncodeError :
