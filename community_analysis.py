@@ -126,6 +126,10 @@ if __name__ == '__main__' :
                         kws[k] += v
                     else :
                         kws[k] = v
+            
+            if len(kws) == 0 :
+                continue
+
 
             scores = kws.values()
             avg_score = sum(scores) / float(len(scores))
