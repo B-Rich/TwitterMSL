@@ -130,13 +130,14 @@ if __name__ == '__main__' :
 
             kws = {}
             for user in community :
-                doc = user_text[user]
+                if user in user_text :
+                    doc = user_text[user]
 
-                for k,v in ke.keywords(doc) :
-                    if k in kws :
-                        kws[k] += v
-                    else :
-                        kws[k] = v
+                    for k,v in ke.keywords(doc) :
+                        if k in kws :
+                            kws[k] += v
+                        else :
+                            kws[k] = v
             
             if len(kws) == 0 or c_size < 2 :
                 continue
