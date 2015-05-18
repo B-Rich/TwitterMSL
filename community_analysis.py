@@ -127,7 +127,7 @@ if __name__ == '__main__' :
 
 
         # precompute link weights
-        weights = {u : (len({x,y for x,_,y in tweets if y == u})/float(len(tweets))) for _,_,u in tweets} :                           
+        weights = {u : (len({(x,y) for x,_,y in tweets if y == u})/float(len(tweets))) for _,_,u in tweets} :                           
 
         for community in communities :
 
