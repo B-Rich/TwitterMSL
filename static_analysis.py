@@ -11,11 +11,22 @@ if __name__ == '__main__' :
 
     from sys import argv
 
-    resolved_path = argv[1]
-    output_path = argv[2]
+    domains_path = 'top.csv'
+    resolved_path = 'resolved.csv'
+    output_path = argv[1]
     temp_name = 'booh'
     overlapping = False
     path = lambda i : './data/tweets_{}.json'.format(str(i))
+
+    with open(domains_path,'r') as f :
+        domains = set()
+        for line in f :
+            try :
+                dom,_ = line.strip().split(',')
+            except ValueError :
+                continue
+            domains.add(dom)
+            
 
     with open(resolved_path,'r') as f :
         resolved = {}
@@ -48,6 +59,9 @@ if __name__ == '__main__' :
                             if not url in resolved :
                                 continue
                             rurl = resolved[url]
+                            dom = rurl.replace('www.','').partition('//')[-1].partition('/')[0]
+                            if dom not in domains :
+                                continue
                             tweets.add( (user,rurl,text) )
                             
         except IOError :
