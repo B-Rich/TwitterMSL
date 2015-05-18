@@ -124,6 +124,11 @@ if __name__ == '__main__' :
 
     with open(output_path,'w') as f :
         results = []
+
+
+        # precompute link weights
+        weights = {u : (len({x,y for x,_,y in tweets if y == u})/float(len(tweets))) for _,_,u in tweets} :                           
+
         for community in communities :
 
             c_size = len(community)
@@ -145,7 +150,7 @@ if __name__ == '__main__' :
             score = 0.0
             com_urls = {url for user,_,url in tweets if user in community}
             for x in com_urls :
-                score += len({user for user,_,url in tweets if url == x})
+                score += len({user for user,_,url in tweets if url == x and user in community}) / weights(x)
 
             score = score / (len(com_urls)*c_size)
 
