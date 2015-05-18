@@ -13,7 +13,7 @@ with open(path,'r') as f :
 
         if 'www.' in url :
             url = url.replace('www.','')
-        dom = url.partition('.')[0]
+        dom = url.partition('//')[-1].partition['/'][0]
         if dom in domains :
             domains[dom] += 1
         else :
