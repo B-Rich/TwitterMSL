@@ -14,13 +14,17 @@ class KeywordExtractor :
         self.punctuation = punctuation
         self.stopwords = stopwords
 
-    def preprocess(self,document,remove_urls=True) :
+    def preprocess(self,document,remove_urls=True,remove_usernames=True) :
         # convert to lowercase
         lower_doc = document.lower()
 
 
         if remove_urls :
             pattern = r'http[\S]+'
+            lower_doc = re.sub(pattern,'',lower_doc)
+
+        if remove_usernames :
+            pattern = r'@[\S]+'
             lower_doc = re.sub(pattern,'',lower_doc)
 
         # remove punctuation
@@ -119,7 +123,7 @@ if __name__ == '__main__' :
         else :
             user_text[user] = text
 
-    ke = KeywordExtractor(punctuation = string.punctuation, stopwords = stopwords)
+    ke = KeywordExtractor(punctuation = string.punctuation.replace('#',''), stopwords = stopwords)
     ke.train_model( user_text.values() )
 
     with open(output_path,'w') as f :
@@ -127,7 +131,7 @@ if __name__ == '__main__' :
 
 
         # precompute link weights
-        weights = {u : (len({(x,y) for x,_,y in tweets if y == u})/float(len(tweets))) for _,_,u in tweets} :                           
+        weights = {u : (len({(x,y) for x,_,y in tweets if y == u})/float(len(tweets))) for _,_,u in tweets}
 
         for community in communities :
 
@@ -147,12 +151,16 @@ if __name__ == '__main__' :
             if len(kws) == 0 or c_size < 2 :
                 continue
 
+            score = c_size
+            '''
             score = 0.0
+
             com_urls = {url for user,_,url in tweets if user in community}
             for x in com_urls :
-                score += len({user for user,_,url in tweets if url == x and user in community}) / weights(x)
+                score += len({user for user,_,url in tweets if url == x and user in community}) / weights[x]
 
             score = score / (len(com_urls)*c_size)
+            '''
 
             just_words = map(lambda x : x[0],sorted(kws.items(),key=lambda x : x[1],reverse=True))
 
