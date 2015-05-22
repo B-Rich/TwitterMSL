@@ -1,7 +1,7 @@
 import json
 import string
 import os
-from datetime import date,timedelta
+from datetime import date,timedelta,datetime
 from subprocess import call
 import networkx as nx
 import numpy as np
@@ -59,7 +59,7 @@ if __name__ == '__main__' :
                         continue
                     user = t['user_id']
                     text = t['text']
-                    day = datetime.datetime.strptime(t['created_at'], '%a %b %d %H:%M:%S +0000 %Y').date()
+                    day = datetime.strptime(t['created_at'], '%a %b %d %H:%M:%S +0000 %Y').date()
                     if day < from_day or day > to_day :
                         continue
 
@@ -96,23 +96,24 @@ if __name__ == '__main__' :
 
     print 'Postfiltering:'
     print 'N.Tweets:',len(tweets)
-    print 'N.Users:',len({u for u,_,_ in tweets})
-    print 'N.Urls:',len({u for _,u,_ in tweets})
+    print 'N.Users:',len({u for u,_,_,_ in tweets})
+    print 'N.Urls:',len({u for _,u,_,_ in tweets})
 
 
-    current_date = from_date
+    current_day = from_day
     user_communities = {}
-    while current_date < to_date :
-        print current_date
-        day_str = str(current_date)
+    while current_day < to_day :
+        print current_day
+        day_str = str(current_day)
 
         # Graph processing
         G = nx.Graph()
 
-        for user,link,_ in tweets :
-            G.add_node(user, bipartite = 0)
-            G.add_node(link,bipartite = 1)
-            G.add_edge(user,link)
+        for user,link,_,day in tweets :
+            if day == current_day :
+                G.add_node(user, bipartite = 0)
+                G.add_node(link,bipartite = 1)
+                G.add_edge(user,link)
 
         user_nodes = [n for n,d in G.nodes(data=True) if d['bipartite'] == 0]
         
@@ -148,7 +149,7 @@ if __name__ == '__main__' :
                 com = line.strip().split(' ')
                 user_communities[day_str].append( com )
 
-        current_date = current_date + timedelta(days=1)
+        current_day = current_day + timedelta(days=1)
                         
     with open(output_path,'w') as f :
         f.write(json.dumps(user_communities))
