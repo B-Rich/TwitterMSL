@@ -15,7 +15,7 @@ if __name__ == '__main__' :
     resolved_path = 'resolved.csv'
     output_path = argv[1]
     resolution = float(argv[2])
-    temp_name = 'booh'
+    temp_name = 'temp_{}'.format(str(int(10*resolution)))
 
     path = lambda i : './data/tweets_{}.json'.format(str(i))
 
@@ -84,6 +84,10 @@ if __name__ == '__main__' :
 
     filtered_tweets = {(user,url,text) for user,url,text in tweets if not url in one_time}
     tweets = filtered_tweets
+
+
+    tweets = set(list(tweets)[:int(len(tweets)/10)])
+
     print 'Postfiltering:'
     print 'N.Tweets:',len(tweets)
     print 'N.Users:',len({u for u,_,_ in tweets})
