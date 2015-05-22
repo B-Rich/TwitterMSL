@@ -1,7 +1,7 @@
 import json
 import string
 import os
-from datetime import datetime,timedelta
+from datetime import date,timedelta
 from subprocess import call
 import networkx as nx
 import numpy as np
@@ -18,8 +18,8 @@ if __name__ == '__main__' :
     resolution = float(argv[2])
     temp_name = 'temp_{}'.format(str(int(10*resolution)))
 
-    from_day = datetime.date(2015,5,14)
-    to_day = datetime.date(2015,5,21)
+    from_day = date(2015,5,14)
+    to_day = date(2015,5,21)
 
 
     path = lambda i : './data/tweets_{}.json'.format(str(i))
