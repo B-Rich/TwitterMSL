@@ -3,9 +3,10 @@ import string
 import os
 import re
 
+from datetime import date,datetime
 
 from gensim import corpora,models
-
+from dynamicTracker import DynamicTracker
 
 
 class KeywordExtractor :
@@ -75,8 +76,12 @@ if __name__ == '__main__' :
     with open(community_path,'r') as f :
         communities = json.loads(f.read())
 
-    tweets = set()
+    days = []
+    for key in communities :
+        year,month,day = map(int,key.strip().split('-'))
+        days.append( date(year,month,day) )
 
+    tweets = set()
     for i in xrange(100) :
         try :
             with open(path(i),'r') as f :
@@ -87,10 +92,14 @@ if __name__ == '__main__' :
                         continue
                     user = t['user_id']
                     text = t['text']
+                    day = datetime.datetime.strptime(t['created_at'], '%a %b %d %H:%M:%S +0000 %Y').date()
+
+                    if day not in days :
+                        continue
                     if 'entities' in t and 'urls' in t['entities'] :
                         for x in t['entities']['urls'] :
                             url = x['expanded_url']
-                            tweets.add( (user,text,url) )
+                            tweets.add( (user,text,url,day) )
                   
         except IOError :
             continue
@@ -105,19 +114,19 @@ if __name__ == '__main__' :
 
     one_time = set()
     more_than_once = set()
-    for _,_,url in tweets :
+    for _,_,url,_ in tweets :
         if not (url in one_time or url in more_than_once) :
             one_time.add( url )
         elif url in one_time :
             one_time.remove( url )
             more_than_once.add( url )
 
-    filtered_tweets = {(user,text,url) for user,text,url in tweets if not url in one_time}
+    filtered_tweets = {(user,text,url,day) for user,text,url,day in tweets if not url in one_time}
     tweets = filtered_tweets
 
 
     user_text = {}
-    for user,text in {(u,t) for u,t,_ in tweets} :
+    for user,text in {(u,t) for u,t,_,_ in tweets} :
         if user in user_text :
             user_text[user] += ' ' + text
         else :
@@ -126,19 +135,35 @@ if __name__ == '__main__' :
     ke = KeywordExtractor(punctuation = string.punctuation.replace('#',''), stopwords = stopwords)
     ke.train_model( user_text.values() )
 
+    
+    dt = DynamicTracker(threshold,expiration)
+    dt.similarity = DynamicTracker.user_similarity
+
+    for day in days :
+        step = []
+        for com in communities[day] :
+            step.append( {'users' : com} )
+
+        dt.next_step( step )
+        
+        
+
     with open(output_path,'w') as f :
         results = []
 
-
         # precompute link weights
-        weights = {u : (len({(x,y) for x,_,y in tweets if y == u})/float(len(tweets))) for _,_,u in tweets}
+        weights = {u : (len({(x,y) for x,_,y,_ in tweets if y == u})/float(len(tweets))) for _,_,u,_ in tweets}
 
-        for community in communities :
+        for d in dt.D :
+            users = set()
+            for x,y,_ in d :
+                for u in dt.C[x][y] :
+                    users.add( u )
 
-            c_size = len(community)
+            c_size = len(d)
 
             kws = {}
-            for user in community :
+            for user in users :
                 if user in user_text :
                     doc = user_text[user]
 
@@ -152,15 +177,6 @@ if __name__ == '__main__' :
                 continue
 
             score = c_size
-            '''
-            score = 0.0
-
-            com_urls = {url for user,_,url in tweets if user in community}
-            for x in com_urls :
-                score += len({user for user,_,url in tweets if url == x and user in community}) / weights[x]
-
-            score = score / (len(com_urls)*c_size)
-            '''
 
             just_words = map(lambda x : x[0],sorted(kws.items(),key=lambda x : x[1],reverse=True))
 
