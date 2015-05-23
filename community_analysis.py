@@ -69,8 +69,15 @@ if __name__ == '__main__' :
 
     from sys import argv
 
-    community_path = argv[1]
-    output_path = argv[2]
+    try :
+        community_path = argv[1]
+        output_path = argv[2]
+        threshold = float(argv[3])
+        expiration = int(argv[4])
+    except IndexError :
+        print "input_path output_path threshold expiration"
+        exit(1)
+
     path = lambda i : './data/tweets_{}.json'.format(str(i))
 
     with open(community_path,'r') as f :
@@ -92,7 +99,7 @@ if __name__ == '__main__' :
                         continue
                     user = t['user_id']
                     text = t['text']
-                    day = datetime.datetime.strptime(t['created_at'], '%a %b %d %H:%M:%S +0000 %Y').date()
+                    day = datetime.strptime(t['created_at'], '%a %b %d %H:%M:%S +0000 %Y').date()
 
                     if day not in days :
                         continue
