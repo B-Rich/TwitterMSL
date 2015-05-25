@@ -133,9 +133,13 @@ if __name__ == '__main__' :
         # export the graph in a temporary .dat file
         oslom_filename = './temp/{}.dat'.format(temp_name)
 
+        node_index = UU.nodes()
+
         with open(oslom_filename,'w') as f :
             for x,y,d in UU.edges(data=True) :
-                f.write('{}\t{}\t{}\n'.format(str(x),str(y),str(d['weight'])))
+                xi = node_index.index(x)
+                yi = node_index.index(y)
+                f.write('{}\t{}\t{}\n'.format(str(xi),str(yi),str(d['weight'])))
 
         with open(os.devnull, "w") as fnull:
             call(['OSLOM2/oslom_undir','-cp',str(resolution),'-w','-f',oslom_filename],stdout=fnull)
@@ -146,7 +150,7 @@ if __name__ == '__main__' :
             for line in f :
                 if len(line) == 0 or line.startswith('#') :
                     continue
-                com = line.strip().split(' ')
+                com = [node_index[ int(xi) ] for xi in line.strip().split(' ')]
                 user_communities[day_str].append( com )
 
         current_day = current_day + timedelta(days=1)
