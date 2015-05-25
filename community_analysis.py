@@ -146,25 +146,29 @@ if __name__ == '__main__' :
     dt = DynamicTracker(threshold,expiration)
     dt.similarity = DynamicTracker.user_similarity
 
-    for day in days :
+    print "Tracking.."
+    for day in sorted(days) :
+        day_str = '{}-{}-{}'.format(str(day.year),('0' if day.month < 10 else '') + str(day.month),str(day.day))
+        print day_str
         step = []
-        for com in communities[day] :
+        for com in communities[day_str] :
             step.append( {'users' : com} )
 
-        dt.next_step( step )
+        dt.nextStep( step )
         
         
 
     with open(output_path,'w') as f :
         results = []
+    
+        for nd,d in enumerate(dt.D) :
 
-        # precompute link weights
-        weights = {u : (len({(x,y) for x,_,y,_ in tweets if y == u})/float(len(tweets))) for _,_,u,_ in tweets}
-
-        for d in dt.D :
+            if len(d) < 2 :
+                continue 
+            print "{}/{}".format(str(nd),str(len(dt.D)))
             users = set()
             for x,y,_ in d :
-                for u in dt.C[x][y] :
+                for u in dt.C[x][y]['users'] :
                     users.add( u )
 
             c_size = len(d)
@@ -180,17 +184,17 @@ if __name__ == '__main__' :
                         else :
                             kws[k] = v
             
-            if len(kws) == 0 or c_size < 2 :
+            if len(kws) == 0 :
+                print "Fuuu"
                 continue
 
-            score = c_size
-
+            score = c_size                     
             just_words = map(lambda x : x[0],sorted(kws.items(),key=lambda x : x[1],reverse=True))
-
             results.append( (score,c_size,just_words[:10]) )
-
+        
         results.sort(key = lambda x : x[0], reverse = True)
-
+        print "RESULTS!",len(results)
+                      
         for _,size,just_words in results :
             f.write( str(size) + ' : ' )
             for w in just_words :
